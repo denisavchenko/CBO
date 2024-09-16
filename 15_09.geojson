@@ -1,0 +1,12 @@
+{
+"type": "FeatureCollection",
+"name": "15_09",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "type": "obstrel" }, "geometry": { "type": "Point", "coordinates": [ 36.939649015940034, 47.976905816612685 ] } },
+{ "type": "Feature", "properties": { "type": "zahvat" }, "geometry": { "type": "Point", "coordinates": [ 37.184002342474031, 48.293601116207654 ] } },
+{ "type": "Feature", "properties": { "type": "obstrel" }, "geometry": { "type": "Point", "coordinates": [ 37.672708995542031, 48.458262547235364 ] } },
+{ "type": "Feature", "properties": { "type": "zahvat" }, "geometry": { "type": "Point", "coordinates": [ 37.65854358530818, 48.855938976056564 ] } },
+{ "type": "Feature", "properties": { "type": "obstrel" }, "geometry": { "type": "Point", "coordinates": [ 38.041009661622262, 48.624732460216244 ] } }
+]
+}

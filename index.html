@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>1111 - LeafLet Preview</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+  <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/themes/smoothness/jquery-ui.min.css" rel="stylesheet" type="text/css"/>
+  <style type="text/css">
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    #map {
+        width: 1200px;
+        height: 1200px;
+    }
+
+    .leaflet-control-attribution {
+        display: none; /* Убирает атрибуцию Leaflet */
+    }
+
+    .legend {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        font-size: 14px;
+        line-height: 24px;
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        z-index: 1000;
+    }
+    .legend div {
+        display: flex;
+        align-items: center;
+    }
+    .legend i {
+        width: 24px;
+        height: 24px;
+        display: inline-block;
+        margin-right: 8px;
+        border-radius: 50%;
+        background-size: cover;
+    }
+    .date-switcher {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: white;
+        padding: 5px;
+        border-radius: 5px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div id="map">
+    <div class="date-switcher">
+        <select id="date-select">
+            <option value="15">15 сентября</option>
+            <option value="16">16 сентября</option>
+        </select>
+    </div>
+  </div>
+
+  <!-- Скрипты -->
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+  <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+  <script>
+    $(document).ready(function () {
+      var map = L.map('map').setView([48.0159, 37.8029], 8);
+
+      var mytile = L.tileLayer('file:///C:/Users/sdi20/Desktop/_tiles_final/1111/{z}/{x}/{y}.png', {
+        maxZoom: 9,
+        minZoom: 8,
+        tms: true,
+
+      }).addTo(map);
+
+      // Создание иконок
+      var iconObstrel = L.icon({
+          iconUrl: 'icons/obstrel-icon.png',
+          iconSize: [32, 32],  // Размер иконки
+          iconAnchor: [16, 32], // Точка, к которой привязана иконка (центр нижней части)
+          popupAnchor: [0, -32] // Положение всплывающего окна относительно иконки
+      });
+
+      var iconZahvat = L.icon({
+          iconUrl: 'icons/zahvat-icon.png',
+          iconSize: [32, 32],  // Размер иконки
+          iconAnchor: [16, 32], // Точка, к которой привязана иконка (центр нижней части)
+          popupAnchor: [0, -32] // Положение всплывающего окна относительно иконки
+      });
+
+      // Функция для создания слоя с фильтрацией по типу события и кастомными иконками
+      function createLayer(geoData) {
+          return L.geoJSON(geoData, {
+              pointToLayer: function (feature, latlng) {
+                  var icon = feature.properties.type === 'obstrel' ? iconObstrel : iconZahvat;
+                  return L.marker(latlng, { icon: icon });
+              }
+          });
+      }
+
+      // Объекты для хранения слоев
+      var layers = {
+          '15': null,
+          '16': null
+      };
+
+      // Загрузка данных GeoJSON и создание слоев
+      function loadGeoJSON(url, layerKey) {
+          return fetch(url)
+              .then(response => response.json())
+              .then(data => {
+                  layers[layerKey] = createLayer(data);  // Создаем слой без фильтрации по типам событий
+                  console.log(`GeoJSON for ${layerKey} loaded successfully.`); // Лог успешной загрузки
+              })
+              .catch(error => console.error(`Error loading GeoJSON for ${layerKey}:`, error)); // Лог ошибки
+      }
+
+      // Загрузка данных для всех слоев
+      Promise.all([
+          loadGeoJSON('15_09.geojson', '15'),
+          loadGeoJSON('16_09.geojson', '16')
+      ]).then(() => {
+          // Изначально показываем слой за 16 сентября
+          if (layers['16']) {
+              layers['16'].addTo(map);
+          }
+      });
+
+      // Создание легенды
+      var legend = L.control({ position: 'bottomleft' });
+
+      legend.onAdd = function () {
+          var div = L.DomUtil.create('div', 'legend');
+          div.innerHTML = 
+              '<div><i style="background: url(\'icons/obstrel-icon.png\') no-repeat center center; background-size: cover;"></i> Артобстрел</div>' +
+              '<div><i style="background: url(\'icons/zahvat-icon.png\') no-repeat center center; background-size: cover;"></i> Захват</div>';
+          return div;
+      };
+
+      legend.addTo(map);
+
+      // Обработка переключения дат
+      document.getElementById('date-select').addEventListener('change', function () {
+          var selectedDate = this.value;
+
+          // Удаление всех слоев с карты
+          map.eachLayer(function (layer) {
+              if (layer instanceof L.GeoJSON) {
+                  map.removeLayer(layer);
+              }
+          });
+
+          // Добавление выбранного слоя
+          if (layers[selectedDate]) {
+              layers[selectedDate].addTo(map);
+          }
+      });
+    });
+  </script>
+</body>
+</html>
